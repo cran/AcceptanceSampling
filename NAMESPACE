@@ -1,0 +1,13 @@
+importFrom("graphics", plot)
+
+export("OC2c")
+
+exportClasses("OC2c",
+              "OCbinomial",
+              "OChypergeom",
+              "OCpoisson")
+
+exportMethods("plot",
+              "show",
+              "summary",
+              "assess")
