@@ -12,7 +12,7 @@
 \alias{summary,OC2c-method}
 \alias{summary,OChypergeom-method}
 
-\title{Operating Characteristics of an Acceptance Samping Plan}
+\title{Operating Characteristics of an Acceptance Sampling Plan}
 
 \description{ The preferred way of creating new objects from the family
   of \code{"OC2c"} classes.}

@@ -1,4 +1,4 @@
-## AcceptanceSampling.R --- 
+## code_twoclass.R --- 
 ##
 ## Author: Andreas Kiermeier
 ##
@@ -6,6 +6,34 @@
 ##
 ## Purpose: A package to provide functionality for creating and
 ##          evaluating acceptance sampling plans.
+##          
+## Changes:
+## 16Aug07: * Added check in OC2c validation code to ensure that sample sizes
+##            are greater than zero.
+##          * Added virtual class OCvar for variables sampling plans (single
+##            only)
+##          * Added actual class for variables sampling plans - Normal
+## 20Aug07: * Added function {find.k} to find constant k for given sample size in
+##            normal variables sampling plans
+##          * Added function {find.plan} to find smallest sampling plan
+##            for given Producer and Consumer Risk Points
+## 27Feb08: * Changed the validation for r & c (which are cumulative) to be
+##            compared against cumsum(n) as n is not cumulative.
+## 05Mar08: * Fixed problem with multiple sampling plans - previous calculations
+##            were completely wrong.
+##            Code now enumerates over all stages and all possible outcomes which
+##            leadto additional sampling.
+##            
+## Notes:
+## For implemented package use
+## 
+## getFromNamespace(paste("calc.",OCtype,sep=""), ns="AcceptanceSampling")
+##
+## while for testing directly use
+##
+## get(paste("calc.",OCtype,sep=""))
+##
+## There are THREE (3) of these instances
 ## ----------------------------------------------------------------------
 
 ## ----------------------------------------------------------------------
@@ -13,30 +41,36 @@
 ## ----------------------------------------------------------------------
 
 setClass("OC2c", representation(n="numeric", ## A vector of sample sizes at each
-                              ## stage of sampling - NOT comulative sample size
-                              c="numeric", ## vector of acceptance numbers for
-                              ## each stage of sampling. Accept if actual number
-                              ## of defectives/defects is <= c
-                              r="numeric", ## vector of rejection numbers for
-                              ## each stage of sampling. Reject if actual number
-                              ## of defectives/defects is >= r
+                                ## stage of sampling
+                                ## NOT CUMULATIVE
+                                c="numeric", ## vector of acceptance numbers for
+                                ## each stage of sampling. Accept if actual number
+                                ## of defectives/defects is <= c
+                                ## CUMULATIVE
+                                r="numeric", ## vector of rejection numbers for
+                                ## each stage of sampling. Reject if actual number
+                                ## of defectives/defects is >= r
+                                ## CUMULATIVE
                               type="character",
                               paccept="numeric",
                               "VIRTUAL"),
          validity=function(object){
            if(any(is.na(object@n)) | any(is.na(object@c)) |
               any(is.na(object@r)))
-             return("Missing values in 'n', 'c', or 'r'")
+             return("Missing values in 'n', 'c', or 'r' not allowed")
            ## Check that n, c and r are of the same length
            l <- length(object@n)
            if (l != length(object@c) | l != length(object@r))
              return("n, c and r must be of same length.")
+           ## Check that the sample sizes make sense
+           if (any(object@n <= 0))
+             return("Sample size(s) 'n' must be greater than 0.")
            ## Check that the acceptance numbers make sense
-           if (any(object@c < 0) | any(object@c > object@n))
-             return("Acceptance number(s) 'c' must be in the range [0,n]")
+           if (any(object@c < 0) | any(object@c > cumsum(object@n)))
+             return("Acceptance number(s) 'c' must be in the range [0,n], here n is the cumulative sample size.")
            ## Check that the rejection numbers make sense
-           if (any(object@r < 0) | any(object@r > object@n))
-             return("Rejection number(s) 'r' must be in the range [0,n].")
+           if (any(object@r < 0) | any(object@r > cumsum(object@n)))
+             return("Rejection number(s) 'r' must be in the range [0,n], here n is the cumulative sample size.")
            if (any(object@r <= object@c))
              return("Rejection number(s) 'r' must be greater than acceptance number(s) 'c'.")
            ## For double sampling (or more) make sure that acceptance and
@@ -62,7 +96,7 @@ setClass("OCbinomial",
          validity=function(object){
            ## Check that the proportion of defectives make sense
            if (any(is.na(object@pd)))
-             return("Missing values in 'pd'")
+             return("Missing values in 'pd' not allowed")
            if (any(object@pd < 0.) | any(object@pd > 1.) )
              return("Proportion defectives must be in the range [0,1]")
          })
@@ -72,19 +106,22 @@ setClass("OChypergeom",
                         N="numeric",
                         pd="numeric"),
          contains="OC2c",
-         prototype=list("OC2c", type="hypergeom",N=100,pd=(0:100)/100),
+         prototype=list("OC2c", type="hypergeom", N=100, pd=(0:100)/100),
          validity=function(object){
            ## Check that the population size of of length 1
            if (length(object@N) > 1)
              return("Length of population size 'N' != 1")
            if (is.na(object@N))
-             return("Missing value in 'N'")
+             return("Missing value in 'N' not allowed")
+           ## Check that the population size is not less than 1
+           if (object@N < 1.)
+             return("Population size 'N' must be at least 1")
            ## Check that the population size is non-negative
-           if (object@N < 0.)
-             return("Population size 'N' must be non-negative")
+           if (object@N < sum(object@n))
+             return("Total sample size must be less than population size 'N'")
            ## Check that the proportion of defectives make sense
            if (any(is.na(object@pd)))
-             return("Missing value in 'pd'")
+             return("Missing value in 'pd' not allowed")
            if (any(object@pd < 0.) | any(object@pd > 1) )
              return("Proportion defectives 'pd' must be in the range [0,1]")
          })
@@ -97,7 +134,7 @@ setClass("OCpoisson",
          validity=function(object){
            ## Check that the proportion of defectives make sense
            if (any(is.na(object@pd)))
-             return("Missing values in 'pd'")
+             return("Missing values in 'pd' not allowed")
            if (any(object@pd < 0.))
              return("Rate of defects 'pd' must be non-negative")
          })
@@ -121,6 +158,7 @@ OC2c <- function(n,c,r=if (length(c)==1) c+1 else NULL,
   ## Evaluate the probability of acceptance for this type and given
   ## pd.
   ## First get the generic calculation function
+##   OCtype <- get(paste("calc.",OCtype,sep=""))
   OCtype <- getFromNamespace(paste("calc.",OCtype,sep=""),
                 ns="AcceptanceSampling")
 
@@ -139,75 +177,246 @@ OC2c <- function(n,c,r=if (length(c)==1) c+1 else NULL,
 
 
 
+
 calc.OCbinomial <- function(n,c,r,pd)
 {
-  ## n needs to be cumulative since c and r are specified that way too.
-  n <- cumsum(n)
-  ## Get a list with a vector for each pd.
-  ## Length of vector equals number of samples, e.g. double = length 2.
-  p.accept <- lapply(pd, FUN=function(el) pbinom(q=c, size=n, prob=el))
-  p.unsure <- lapply(pd, FUN=function(el) {
-    pbinom(q=(r-1), size=n, prob=el) - pbinom(q=c, size=n, prob=el)})
-
-  ## Now combine the sampling stages via helper function
-  pa <- mapply(FUN=calc.paccept, p.accept=p.accept, p.unsure=p.unsure)
-  pa
+  p.acc <- sapply(pd, FUN=calc.OCbinomial.pdi, n=n, c=c, r=r)
+  p.acc
 }
+
+calc.OCbinomial.pdi <- function(pd,n,c,r)
+{
+  ## This is really a helper function - it does all the work for each
+  ## value of pd.
+  k.s <- length(n) ## number of stages in this sampling
+
+  prob.acc <- function(x, n, p){
+    k <- length(x)
+    k1 <- k-1
+    prod(dbinom(x[1:k1], n[1:k1], p))*pbinom(x[k], n[k], p)
+  }
+
+  
+  for (k in 1:k.s) {
+    ## For each stage, find out all the possibilities which could
+    ## lead to still not having made a decision and then calculate
+    ## the appropriate probabilities.
+
+    if(k==1) {
+      ## Only a single sampling stage to do - this is simple
+      p.acc <- sapply(pd, FUN=function(el){
+        pbinom(q=c[1],size=n[1],prob=el)})
+      ## p.acc now exists and can be used in the following stages.
+    }
+    else if (k==2) {
+      ## Two sampling stages. Needs to be handled separately from
+      ## more stages due to matrix dimensions
+      c.s <- c+1 ## Use to calculate limits
+      r.s <- r-1 ## Use to calculate limits
+
+      ## The possibilities which lead to a decision to be made at
+      ## the second stage
+      x <- data.frame(X1=seq(c.s[1], r.s[1], by=1),
+                      X.last=c[2]-seq(c.s[1], r.s[1], by=1))
+      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, p=pd))
+    }
+    else {
+      ## More than two sampling stages.
+      ## Things are more tricky.
+      c.s <- c+1 ## Use to calculate limits
+      r.s <- r-1 ## Use to calculate limits
+      
+      expand.call <- "expand.grid(c.s[k-1]:r.s[k-1]"
+      for(i in 2:(k-1)){
+        expand.call <- paste(expand.call,paste("c.s[k-",i,"]:r.s[k-",i,"]",sep=""),sep=",")
+      }
+      expand.call <- paste(expand.call,")",sep="")
+      x <- eval(parse(text=expand.call)[[1]])
+      x <- x[,(k-1):1]
+      names(x) <- paste("X",1:(k-1),sep="")
+
+      for(i in ncol(x):2){
+        x[,i] <- x[,i]-x[,i-1]
+      }
+      x <- cbind(x, X.last=c[k] - rowSums(x[,1:(k-1)]))
+      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, p=pd))
+    }
+  }
+  return(p.acc)
+}
+
 
 
 calc.OChypergeom <- function(n,c,r,N,D)
 {
-  ## n needs to be cumulative since c and r are specified that way too.
-  n <- cumsum(n)
-  ## Get a list with a vector for each pd.
-  ## Length of vector equals number of samples, e.g. double = length 2.
-  ## Note that c, n, D, and N are not required to be integers. the
-  ## Hypergeometric function deals with them "appropriately" and we
-  ## adopt the same treatment here.
-  ## white ball is defect; black is non-defect
-  p.accept <- lapply(D, FUN=function(el) phyper(q=c, m=el, n=N-el, k=n))
-  p.unsure <- lapply(D, FUN=function(el) {
-    phyper(q=(r-1), m=el, n=N-el, k=n) - phyper(q=c, m=el, n=N-el, k=n)})
-
-  ## Now combine the sampling stages via helper function
-  pa <- mapply(FUN=calc.paccept, p.accept=p.accept, p.unsure=p.unsure)
-  pa
+  p.acc <- sapply(D, FUN=calc.OChypergeom.pdi, n=n, c=c, r=r, N=N)
+  p.acc
 }
+
+
+## phyper(q=0,m=5,n=100-5,k=13) +
+##   dhyper(x=1,m=5,n=100-5,k=13)*phyper(q=0,m=4,n=100-13-4,k=13)
+
+calc.OChypergeom.pdi <- function(D,n,c,r,N)
+{
+  ## This is really a helper function - it does all the work for each
+  ## value of pd.
+  k.s <- length(n) ## number of stages in this sampling
+  
+  prob.acc <- function(x, n, N, D){
+    k <- length(x) ## Number of sampling stages
+    k1 <- k-1
+    ## Total number of defects and total sample size taken so far.
+    ## Note that 0 is prepended to indicate that at stage 1, zero
+    ## defects have been found.
+    x.cum <- cumsum(x)
+    n.cum <- cumsum(n)
+    N.cum <- N-c(0,n.cum[1:k1])
+    D.cum <- D-c(0,x.cum[1:k1])
+
+    prod(dhyper(x=x[1:k1], m=pmax(D.cum[1:k1],0),
+                n=N.cum[1:k1]-pmax(D.cum[1:k1],0), k=n[1:k1]))*
+      phyper(q=x[k], m=pmax(D.cum[k],0), n=N.cum[k]-pmax(D.cum[k],0), k=n[k])
+  }
+
+  
+  for (k in 1:k.s) {
+    ## For each stage, find out all the possibilities which could
+    ## lead to still not having made a decision and then calculate
+    ## the appropriate probabilities.
+
+    if(k==1) {
+      ## Only a single sampling stage to do - this is simple
+      p.acc <- sapply(D, FUN=function(el){
+        phyper(q=c[1], m=el, n=N-el, k=n[1])})
+      ## p.acc now exists and can be used in the following stages.
+    }
+    else if (k==2) {
+      ## Two sampling stages. Needs to be handled separately from
+      ## more stages due to matrix dimensions
+      c.s <- c+1 ## Use to calculate limits
+      r.s <- r-1 ## Use to calculate limits
+
+      ## The possibilities which lead to a decision to be made at
+      ## the second stage
+      x <- data.frame(X1=seq(c.s[1], r.s[1], by=1),
+                      X.last=c[2]-seq(c.s[1], r.s[1], by=1))
+      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, N=N, D=D))
+    }
+    else {
+      ## More than two sampling stages.
+      ## Things are more tricky.
+      c.s <- c+1 ## Use to calculate limits
+      r.s <- r-1 ## Use to calculate limits
+      
+      expand.call <- "expand.grid(c.s[k-1]:r.s[k-1]"
+      for(i in 2:(k-1)){
+        expand.call <- paste(expand.call,paste("c.s[k-",i,"]:r.s[k-",i,"]",sep=""),sep=",")
+      }
+      expand.call <- paste(expand.call,")",sep="")
+      x <- eval(parse(text=expand.call)[[1]])
+      x <- x[,(k-1):1]
+      names(x) <- paste("X",1:(k-1),sep="")
+
+      for(i in ncol(x):2){
+        x[,i] <- x[,i]-x[,i-1]
+      }
+      x <- cbind(x, X.last=c[k] - rowSums(x[,1:(k-1)]))
+      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, N=N, D=D))
+    }
+  }
+  return(p.acc)
+}
+
 
 calc.OCpoisson <- function(n,c,r,pd)
 {
-  ## n needs to be cumulative since c and r are specified that way too.
-  n <- cumsum(n)
-  ## Get a list with a vector for each pd.
-  ## Length of vector equals number of samples, e.g. double = length 2.
-  ## The rate of defects is given per item.  Need to convert to
-  ## rate per sample size (multiply by n)
-  p.accept <- lapply(pd, FUN=function(el) ppois(q=c, lambda=el*n) )
-  p.unsure <- lapply(pd, FUN=function(el) {
-    ppois(q=(r-1), lambda=el*n) - ppois(q=c, lambda=el*n)})
-
-  ## Now combine the sampling stages via helper function
-  pa <- mapply(FUN=calc.paccept, p.accept=p.accept, p.unsure=p.unsure)
-  pa
+  p.acc <- sapply(pd, FUN=calc.OCpoisson.pdi, n=n, c=c, r=r)
+  p.acc
 }
 
-calc.paccept <- function(p.accept, p.unsure)
+## ppois(q=c, lambda=el*n) el=pd.
+
+calc.OCpoisson.pdi <- function(pd,n,c,r)
 {
-  ## Purpose: From to matrices (one column per sample stage) calculate the
-  ##          overall probability of acceptance
-  ##          Not to be used directly by the user.
-  ## ----------------------------------------------------------------------
-  ## Arguments:
-  ## p.accept: P(accept) at each stage, i, of sampling, i.e. P(X_i <= c_i)
-  ## p.unsure: P(unsure) at each stage, i, of sampling, i.e. P(c_i < X_i < r_i)
-  ## ----------------------------------------------------------------------
-  ## Author: Andreas Kiermeier, Date: 14 May 2007, 15:56
-  pu <- c(1, cumprod(p.unsure))
-  pa <- sum(p.accept*pu[-length(pu)])
+  ## This is really a helper function - it does all the work for each
+  ## value of pd.
+  k.s <- length(n) ## number of stages in this sampling
+
+  prob.acc <- function(x, n, p){
+    k <- length(x)
+    k1 <- k-1
+    prod(dpois(x[1:k1], n[1:k1]*p))*ppois(x[k], n[k]*p)
+  }
+
+  
+  for (k in 1:k.s) {
+    ## For each stage, find out all the possibilities which could
+    ## lead to still not having made a decision and then calculate
+    ## the appropriate probabilities.
+
+    if(k==1) {
+      ## Only a single sampling stage to do - this is simple
+      p.acc <- sapply(pd, FUN=function(el){
+        ppois(q=c[1],lambda=n[1]*el)})
+      ## p.acc now exists and can be used in the following stages.
+    }
+    else if (k==2) {
+      ## Two sampling stages. Needs to be handled separately from
+      ## more stages due to matrix dimensions
+      c.s <- c+1 ## Use to calculate limits
+      r.s <- r-1 ## Use to calculate limits
+
+      ## The possibilities which lead to a decision to be made at
+      ## the second stage
+      x <- data.frame(X1=seq(c.s[1], r.s[1], by=1),
+                      X.last=c[2]-seq(c.s[1], r.s[1], by=1))
+      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, p=pd))
+    }
+    else {
+      ## More than two sampling stages.
+      ## Things are more tricky.
+      c.s <- c+1 ## Use to calculate limits
+      r.s <- r-1 ## Use to calculate limits
+      
+      expand.call <- "expand.grid(c.s[k-1]:r.s[k-1]"
+      for(i in 2:(k-1)){
+        expand.call <- paste(expand.call,paste("c.s[k-",i,"]:r.s[k-",i,"]",sep=""),sep=",")
+      }
+      expand.call <- paste(expand.call,")",sep="")
+      x <- eval(parse(text=expand.call)[[1]])
+      x <- x[,(k-1):1]
+      names(x) <- paste("X",1:(k-1),sep="")
+
+      for(i in ncol(x):2){
+        x[,i] <- x[,i]-x[,i-1]
+      }
+      x <- cbind(x, X.last=c[k] - rowSums(x[,1:(k-1)]))
+      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, p=pd))
+    }
+  }
+  return(p.acc)
 }
 
 
+## calc.OCpoisson <- function(n,c,r,pd)
+## {
+##   ## n needs to be cumulative since c and r are specified that way too.
+##   n <- cumsum(n)
+##   ## Get a list with a vector for each pd.
+##   ## Length of vector equals number of samples, e.g. double = length 2.
+##   ## The rate of defects is given per item.  Need to convert to
+##   ## rate per sample size (multiply by n)
+##   p.accept <- lapply(pd, FUN=function(el) ppois(q=c, lambda=el*n) )
+##   p.unsure <- lapply(pd, FUN=function(el) {
+##     ppois(q=(r-1), lambda=el*n) - ppois(q=c, lambda=el*n)})
 
+##   ## Now combine the sampling stages via helper function
+##   pa <- mapply(FUN=calc.paccept, p.accept=p.accept, p.unsure=p.unsure)
+##   pa
+## }
+
+        
 
 ## ----------------------------------------------------------------------
 ## Printing methods and functions
@@ -282,6 +491,7 @@ setMethod("summary", "OChypergeom",
             }
           })
 
+
 
 ## ----------------------------------------------------------------------
 ## Plotting methods
@@ -344,44 +554,13 @@ setMethod("plot", signature(x="numeric", y="OCpoisson"),
                  ylab="P(accept)", ylim=ylim, ...)
           })
 
+
 
 ## ----------------------------------------------------------------------
 ## Methods to evaluation risk points
 ## All these functions are helpers only and should not be exported
 ## "assess" methods are exported
 ## ----------------------------------------------------------------------
-
-check.paccept <-
-  function(pa){
-    ## Purpose: Utility function to check that supplied P(accept) values
-    ##          fall within [0,1]
-    ## ----------------------------------------------------------------------
-    ## Arguments:
-    ## pa: a vector of P(accept) values
-    ## ----------------------------------------------------------------------
-    ## Author: Andreas Kiermeier, Date: 16 May 2007, 10:19
-    if (any(pa < 0) | any(pa > 1))
-      return(FALSE)
-    return(TRUE)
-  }
-
-check.quality <-
-  function(pd, type){
-    ## Purpose: Utility function to check that supplied Proportion defective
-    ##          values fall within
-    ##          [0,1] for the binomial or hypergeometric
-    ##          [0,inf] for the poisson
-    ## ----------------------------------------------------------------------
-    ## Arguments:
-    ## pd: a vector of proportion defective values
-    ## ----------------------------------------------------------------------
-    ## Author: Andreas Kiermeier, Date: 16 May 2007, 10:19
-    if (any(pd < 0))
-      return(FALSE)
-    if ((type=="binomial" | type=="hypergeom") & any(pd > 1))
-      return(FALSE)
-    return(TRUE)
-  }
 
 assess.OC2c <-
   function(object, PRP, CRP){
@@ -404,10 +583,11 @@ assess.OC2c <-
     else if (!missing(PRP)){
       if( !check.quality(PRP[1], type=object@type) |
          !check.paccept(PRP[2]) )
-        stop("Quality and/or desired P(accept) out of bound")
+        stop("Quality and/or desired P(accept) out of bounds")
 
       ## Get the appropriate function for the distribution and
       ## calculate the P(accept)
+##       calc.pa <- get(paste("calc.OC",object@type,sep=""))
       calc.pa <- getFromNamespace(paste("calc.OC",object@type,sep=""),
                      ns="AcceptanceSampling")
 
@@ -435,6 +615,7 @@ assess.OC2c <-
         stop("Quality and/or desired P(accept) out of bound")
       ## Get the appropriate function for the distribution and
       ## calculate the P(accept)
+##       calc.pa <- get(paste("calc.OC",object@type,sep=""))
       calc.pa <- getFromNamespace(paste("calc.OC",object@type,sep=""),
                      ns="AcceptanceSampling")
       pa <- switch(object@type,
@@ -453,9 +634,6 @@ assess.OC2c <-
     return(list(OK=planOK, PRP=PRP, CRP=CRP))
   }
 
-setGeneric("assess", function(object, PRP, CRP, print=TRUE)
-           standardGeneric("assess"))
-
 setMethod("assess", signature(object="OC2c"),
           function(object, PRP, CRP, print)
           {
@@ -463,7 +641,7 @@ setMethod("assess", signature(object="OC2c"),
             ##          specified producer and/or consumer risk points
             ## ----------------------------------------------------------------------
             ## Arguments:
-            ## object: An object of class OCbinomial
+            ## object: An object of class OC2c
             ## PRP   : Producer risk point in the form c(pdefect, paccept)
             ## CRP   : Consumer risk point in the form c(pdefect, paccept)
             ## print : Print the result
@@ -472,6 +650,8 @@ setMethod("assess", signature(object="OC2c"),
 
             if(!hasArg(PRP) & !hasArg(CRP))
               stop("At least one risk point, PRP or CRP, must be specified")
+            else if(CRP[1] <= PRP[1])
+              stop("Consumer Risk Point quality must be greater than Producer Risk Point quality")
 
             plan <- assess.OC2c(object, PRP, CRP)
             if (print) {

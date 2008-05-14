@@ -3,10 +3,11 @@
 \alias{assess}
 \alias{assess-methods}
 \alias{assess,OC2c-method}
+\alias{assess,OCvar-method}
 
-\title{Assessment methods for the class family "OC2c".}
+\title{Assessment methods for the class family "OC2c" and "OCvar".}
 
-\description{ Assess whether the sampling plan can meet the specified
+\description{Assess whether the sampling plan can meet the specified
   \emph{Producer Risk Point (PRP)} and/or \emph{Consumer Risk Point (CRP)}.}
   
 \section{Methods}{
@@ -19,7 +20,7 @@
 
 \arguments{
 
-  \item{object}{An object of class \code{OC2c}.}
+  \item{object}{An object of class \code{OC2c} or \code{OCvar}.}
 
   \item{PRP}{The Producer Risk Point in the form of a two element
   numeric vector of the form \code{c(pd, pa)}. The first element
@@ -40,7 +41,7 @@
 \author{Andreas Kiermeier}
 
 \seealso{
-  \code{\link{OC2c}}
+  \code{\link{OC2c}}, \code{\link{OCvar}}
 }
 
 \keyword{methods}
