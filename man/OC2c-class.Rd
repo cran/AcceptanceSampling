@@ -58,26 +58,28 @@
 }
 
 \section{Methods}{
-  \item{plot}{\code{signature(x="OCbinomial", y="missing")},\cr
-    \code{signature(x="numeric", y="OCbinomial")},\cr
-    \code{signature(x="OChypergeom", y="missing")},\cr
-    \code{signature(x="numeric", y="OChypergeom")},\cr
-    \code{signature(x="OCpoisson", y="missing")} or\cr
-    \code{signature(x="numeric", y="OCpoisson")}}: Plot the OC curve.
+  \describe{
+    \item{plot}{\code{signature(x="OCbinomial", y="missing")},\cr
+      \code{signature(x="numeric", y="OCbinomial")},\cr
+      \code{signature(x="OChypergeom", y="missing")},\cr
+      \code{signature(x="numeric", y="OChypergeom")},\cr
+      \code{signature(x="OCpoisson", y="missing")} or\cr
+      \code{signature(x="numeric", y="OCpoisson")}}: Plot the OC curve.
   
-  \item{show}{\code{signature("OC2c")} or \code{signature("OChypergeom")}:
-    Show the details of the sampling plan.}
+    \item{show}{\code{signature("OC2c")} or \code{signature("OChypergeom")}:
+      Show the details of the sampling plan.}
 
-  \item{summary}{\code{signature("OC2c")} or
-    \code{signature("OChypergeom")}: Summarise the sampling
-    plan. Optional argument \code{full} (defaults to \code{FALSE}) will
-    show the details at all quality values (\code{pd}) supplied when the
-    object was created.}
+    \item{summary}{\code{signature("OC2c")} or
+      \code{signature("OChypergeom")}: Summarise the sampling
+      plan. Optional argument \code{full} (defaults to \code{FALSE})
+      will show the details at all quality values (\code{pd}) supplied
+      when the object was created.}
 
-  \item{assess}{\code{signature(object="OC2c")}: Assess whether the
-    sampling plan can meet the specified \emph{Producer Risk Point
-    (PRP)} and/or \emph{Consumer Risk Point (CRP)}. For details see
+    \item{assess}{\code{signature(objqect="OC2c")}: Assess whether the
+      sampling plan can meet the specified \emph{Producer Risk Point
+      (PRP)} and/or \emph{Consumer Risk Point (CRP)}. For details see
     \code{\link{assess,OC2c-method}}}
+}
 }
 
 \references{

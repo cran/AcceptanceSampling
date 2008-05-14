@@ -55,22 +55,24 @@
 }
 
 \section{Methods}{
-  \item{plot}{\code{signature(x="OCnormal", y="missing")},\cr
-    \code{signature(x="numeric", y="OCnormal")}}: Plot the OC curve.
+  \describe{
+    \item{plot}{\code{signature(x="OCnormal", y="missing")},\cr
+      \code{signature(x="numeric", y="OCnormal")}}: Plot the OC curve.
   
-  \item{show}{\code{signature("OCvar")}:
-    Show the details of the sampling plan.}
+    \item{show}{\code{signature("OCvar")}:
+      Show the details of the sampling plan.}
 
-  \item{summary}{\code{signature("OCcar")}: Summarise the sampling plan.
-    Optional argument \code{full} (defaults to \code{FALSE}) will show
-    the details at all quality values (\code{pd}) supplied when the
-    object was created.}
+    \item{summary}{\code{signature("OCcar")}: Summarise the sampling
+      plan.  Optional argument \code{full} (defaults to \code{FALSE})
+      will show the details at all quality values (\code{pd}) supplied
+      when the object was created.}
 
-  \item{assess}{\code{signature(object="OCvar")}: Assess whether the
-    sampling plan can meet the specified \emph{Producer Risk Point
-    (PRP)} and/or \emph{Consumer Risk Point (CRP)}. For details see
-    \code{\link{assess,OCvar-method}}} }
-
+    \item{assess}{\code{signature(object="OCvar")}: Assess whether the
+      sampling plan can meet the specified \emph{Producer Risk Point
+      (PRP)} and/or \emph{Consumer Risk Point (CRP)}. For details see
+      \code{\link{assess,OCvar-method}}} } }
+  
+  
 \references{
   Guenther, W. C. (1977) \emph{Sampling Inspection in statistical
     quality control}, Charles Griffin and Company Limited
