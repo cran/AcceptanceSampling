@@ -80,7 +80,7 @@
 \newcommand{\xbar}{\ensuremath{\bar{x}}\xspace}
 
 
-\SweaveOpts{prefix.string=figure, strip.white=TRUE, eps=FALSE, engine=R}
+\SweaveOpts{prefix.string=figure, strip.white=true, eps=FALSE, engine=R}
  %\VignetteIndexEntry{Using AcceptanceSampling} 
  %\VignetteKeywords{AcceptanceSampling,attributes sampling, variables sampling}
  %\VignettePackage{AcceptanceSampling} \\
