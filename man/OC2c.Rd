@@ -17,8 +17,8 @@
 \description{ The preferred way of creating new objects from the family
   of \code{"OC2c"} classes.}
 
-\usage{OC2c(n,c,r=if (length(c)==1) c+1 else NULL, type=c("binomial","hypergeom", "poisson"), ...)
- }
+\usage{OC2c(n,c,r=if (length(c)==1) c+1 else NULL,
+  type=c("binomial","hypergeom", "poisson"), ...) }
 
 \arguments{
     \item{n}{A vector of length k giving the sample size at each

@@ -1,3 +1,4 @@
+import("methods")
 importFrom("graphics", plot)
 
 export("OC2c","OCvar")
