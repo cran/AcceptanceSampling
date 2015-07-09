@@ -91,7 +91,7 @@ find.plan <- function(PRP, CRP,
   else if(CRP[1] <= PRP[1])
     stop("Consumer Risk Point quality must be greater than Producer Risk Point quality")
 
-  ## Attributes Samplint Plan - Binomial distribution
+  ## Attributes Sampling Plan - Binomial distribution
   if (type == "binomial") {
     c <- 0
     n <- c+1
@@ -116,7 +116,7 @@ find.plan <- function(PRP, CRP,
     }
     return(list(n=n, c=c, r=c+1))
   }
-  ## Attributes Samplint Plan - Binomial distribution
+  ## Attributes Sampling Plan - Binomial distribution
   if (type == "hypergeom") {
     c <- 0
     n <- c+1
@@ -141,7 +141,7 @@ find.plan <- function(PRP, CRP,
     }
     return(list(n=n, c=c, r=c+1))
   }
-  ## Attributes Samplint Plan - Binomial distribution
+  ## Attributes Sampling Plan - Binomial distribution
   if (type == "poisson") {
     c <- 0
     n <- c+1
@@ -229,7 +229,6 @@ find.plan <- function(PRP, CRP,
 
 ### Local Variables:
 ### comment-start: "## "
-### mode: auto-fill
 ### fill-column: 80
 ### End:
 

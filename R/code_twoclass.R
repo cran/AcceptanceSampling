@@ -684,6 +684,5 @@ setMethod("assess", signature(object="OC2c"),
 
 ### Local Variables:
 ### comment-start: "## "
-### mode: auto-fill
 ### fill-column: 80
 ### End:

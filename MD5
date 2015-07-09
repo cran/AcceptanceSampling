@@ -1,9 +1,9 @@
-b4553b287078bef398cf31d863934405 *DESCRIPTION
-dc62cc66a8e1fa924e1a52d942d7e2a9 *NAMESPACE
-b708ae8185e18e08364dfac4aed8c476 *R/code_generic.R
-ac48e81c7640c9a752c2a9ca46d9604d *R/code_twoclass.R
-e9c0bbdd95abc11ef38ea623200307af *R/code_var.R
-173b1e64c5ddfc7b5aa43da2693a6c81 *build/vignette.rds
+578c6aefb67684eb5d8ba99bfcb4db5e *DESCRIPTION
+0df4b98d08b9a262052e59517ed54754 *NAMESPACE
+4f7a4535889ed4e5f7c64cad5dfdc52a *R/code_generic.R
+3c321937fc79250be826d8f3353557d0 *R/code_twoclass.R
+3dc71e3b14f6949a0ed274a5cc32d940 *R/code_var.R
+f38a8afe90ba12fd90a8941807f76a7a *build/vignette.rds
 b5a6efbb5dad1d056a634e08d274a5f8 *inst/CITATION
 4ae3039daa2cedbece8b860dd9d5c587 *inst/doc/acceptance_sampling_manual.R
 60fb92476195d6d68b876f1c405acd24 *inst/doc/acceptance_sampling_manual.Rnw
