@@ -146,7 +146,7 @@ setClass("OCpoisson",
 ## other functions are helpers only
 ## ----------------------------------------------------------------------
 
-OC2c <- function(n,c,r=if (length(c)==1) c+1 else NULL,
+OC2c <- function(n,c,r=1+rep(c[length(c)],length(c)),
                type=c("binomial","hypergeom", "poisson"), ...){
   ## Decide on what 'type' to use
   type <- match.arg(type)
