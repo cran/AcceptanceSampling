@@ -180,152 +180,69 @@ OC2c <- function(n,c,r=1+rep(c[length(c)],length(c)),
 
 calc.OCbinomial <- function(n,c,r,pd)
 {
-  p.acc <- sapply(pd, FUN=calc.OCbinomial.pdi, n=n, c=c, r=r)
-  p.acc
-}
+  boundaries <- getBoundaries(n, c, r)
+  n <- length(boundaries$lower)
+  rMax <- max(boundaries$upper)
+  dim2 <- rMax + 1
 
-calc.OCbinomial.pdi <- function(pd,n,c,r)
-{
-  ## This is really a helper function - it does all the work for each
-  ## value of pd.
-  k.s <- length(n) ## number of stages in this sampling
+  ## pa[i, j + 1] is the probability of acceptance,
+  ## conditional on having seen j nonconforming items
+  ## among the first n, for j in 0:rMax,
+  ## when the proportion nonconforming is pd[i]
 
-  prob.acc <- function(x, n, p){
-    k <- length(x)
-    k1 <- k-1
-    prod(dbinom(x[1:k1], n[1:k1], p))*pbinom(x[k], n[k], p)
+  pa <- matrix(0, length(pd), dim2)
+
+  while (n > 0) {
+    if (boundaries$lower[n] >= 0)
+      pa[, 1:(1 + boundaries$lower[n])] <- 1
+    pa[, (1 + boundaries$upper[n]):dim2] <- 0
+    n <- n - 1
+    pa[, -dim2] <- (1 - pd) * pa[, -dim2] + pd * pa[, -1]
   }
-
-  
-  for (k in 1:k.s) {
-    ## For each stage, find out all the possibilities which could
-    ## lead to still not having made a decision and then calculate
-    ## the appropriate probabilities.
-
-    if(k==1) {
-      ## Only a single sampling stage to do - this is simple
-      p.acc <- sapply(pd, FUN=function(el){
-        pbinom(q=c[1],size=n[1],prob=el)})
-      ## p.acc now exists and can be used in the following stages.
-    }
-    else if (k==2) {
-      ## Two sampling stages. Needs to be handled separately from
-      ## more stages due to matrix dimensions
-      c.s <- c+1 ## Use to calculate limits
-      r.s <- r-1 ## Use to calculate limits
-
-      ## The possibilities which lead to a decision to be made at
-      ## the second stage
-      x <- data.frame(X1=seq(c.s[1], r.s[1], by=1),
-                      X.last=c[2]-seq(c.s[1], r.s[1], by=1))
-      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, p=pd))
-    }
-    else {
-      ## More than two sampling stages.
-      ## Things are more tricky.
-      c.s <- c+1 ## Use to calculate limits
-      r.s <- r-1 ## Use to calculate limits
-      
-      expand.call <- "expand.grid(c.s[k-1]:r.s[k-1]"
-      for(i in 2:(k-1)){
-        expand.call <- paste(expand.call,paste("c.s[k-",i,"]:r.s[k-",i,"]",sep=""),sep=",")
-      }
-      expand.call <- paste(expand.call,")",sep="")
-      x <- eval(parse(text=expand.call)[[1]])
-      x <- x[,(k-1):1]
-      names(x) <- paste("X",1:(k-1),sep="")
-
-      for(i in ncol(x):2){
-        x[,i] <- x[,i]-x[,i-1]
-      }
-      x <- cbind(x, X.last=c[k] - rowSums(x[,1:(k-1)]))
-      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, p=pd))
-    }
-  }
-  return(p.acc)
+  pa[, 1]
 }
-
 
 
 calc.OChypergeom <- function(n,c,r,N,D)
 {
-  p.acc <- sapply(D, FUN=calc.OChypergeom.pdi, n=n, c=c, r=r, N=N)
-  p.acc
+  boundaries <- getBoundaries(n, c, r)
+  n <- length(boundaries$lower)
+  rMax <- max(boundaries$upper)
+  dim2 <- rMax + 1
+
+  ## pa[i, j + 1] is the probability of acceptance,
+  ## conditional on having seen j nonconforming items
+  ## among the first n, for j in 0:rMax,
+  ## when the number nonconforming is D[i]
+
+  pa <- matrix(0, length(D), dim2)
+
+  while (n > 0) {
+    if (boundaries$lower[n] >= 0)
+      pa[, 1:(1 + boundaries$lower[n])] <- 1
+    pa[, (1 + boundaries$upper[n]):dim2] <- 0
+    n <- n - 1
+    p <- outer(D, 0:(rMax - 1), "-") / (N - n)
+    pa[, -dim2] <- (1 - p) * pa[, -dim2] + p * pa[, -1]
+  }
+  pa[, 1]
 }
 
-
-## phyper(q=0,m=5,n=100-5,k=13) +
-##   dhyper(x=1,m=5,n=100-5,k=13)*phyper(q=0,m=4,n=100-13-4,k=13)
-
-calc.OChypergeom.pdi <- function(D,n,c,r,N)
+getBoundaries <- function(n, c, r)
 {
-  ## This is really a helper function - it does all the work for each
-  ## value of pd.
-  k.s <- length(n) ## number of stages in this sampling
-  
-  prob.acc <- function(x, n, N, D){
-    k <- length(x) ## Number of sampling stages
-    k1 <- k-1
-    ## Total number of defects and total sample size taken so far.
-    ## Note that 0 is prepended to indicate that at stage 1, zero
-    ## defects have been found.
-    x.cum <- cumsum(x)
-    n.cum <- cumsum(n)
-    N.cum <- N-c(0,n.cum[1:k1])
-    D.cum <- D-c(0,x.cum[1:k1])
-
-    prod(dhyper(x=x[1:k1], m=pmax(D.cum[1:k1],0),
-                n=N.cum[1:k1]-pmax(D.cum[1:k1],0), k=n[1:k1]))*
-      phyper(q=x[k], m=pmax(D.cum[k],0), n=N.cum[k]-pmax(D.cum[k],0), k=n[k])
+  nLen <- length(n)
+  lower <- rep(-1, n[1] - 1)
+  for (i in 1:nLen) {
+    lower <- c(lower, c[i])
+    if (i < nLen)
+      lower <- c(lower, rep(c[i], n[i + 1] - 1))
   }
 
-  
-  for (k in 1:k.s) {
-    ## For each stage, find out all the possibilities which could
-    ## lead to still not having made a decision and then calculate
-    ## the appropriate probabilities.
+  upper <- NULL
+  for (i in 1:nLen)
+    upper <- c(upper, rep(r[i], n[i]))
 
-    if(k==1) {
-      ## Only a single sampling stage to do - this is simple
-      p.acc <- sapply(D, FUN=function(el){
-        phyper(q=c[1], m=el, n=N-el, k=n[1])})
-      ## p.acc now exists and can be used in the following stages.
-    }
-    else if (k==2) {
-      ## Two sampling stages. Needs to be handled separately from
-      ## more stages due to matrix dimensions
-      c.s <- c+1 ## Use to calculate limits
-      r.s <- r-1 ## Use to calculate limits
-
-      ## The possibilities which lead to a decision to be made at
-      ## the second stage
-      x <- data.frame(X1=seq(c.s[1], r.s[1], by=1),
-                      X.last=c[2]-seq(c.s[1], r.s[1], by=1))
-      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, N=N, D=D))
-    }
-    else {
-      ## More than two sampling stages.
-      ## Things are more tricky.
-      c.s <- c+1 ## Use to calculate limits
-      r.s <- r-1 ## Use to calculate limits
-      
-      expand.call <- "expand.grid(c.s[k-1]:r.s[k-1]"
-      for(i in 2:(k-1)){
-        expand.call <- paste(expand.call,paste("c.s[k-",i,"]:r.s[k-",i,"]",sep=""),sep=",")
-      }
-      expand.call <- paste(expand.call,")",sep="")
-      x <- eval(parse(text=expand.call)[[1]])
-      x <- x[,(k-1):1]
-      names(x) <- paste("X",1:(k-1),sep="")
-
-      for(i in ncol(x):2){
-        x[,i] <- x[,i]-x[,i-1]
-      }
-      x <- cbind(x, X.last=c[k] - rowSums(x[,1:(k-1)]))
-      p.acc <- p.acc + sum(apply(x, 1, FUN=prob.acc, n=n, N=N, D=D))
-    }
-  }
-  return(p.acc)
+  list(lower = lower, upper = upper)
 }
 
 
