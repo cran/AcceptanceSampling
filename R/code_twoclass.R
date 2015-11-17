@@ -216,13 +216,14 @@ calc.OChypergeom <- function(n,c,r,N,D)
   ## when the number nonconforming is D[i]
 
   pa <- matrix(0, length(D), dim2)
+  nd <- outer(D, 0:(rMax - 1), "-")
 
   while (n > 0) {
     if (boundaries$lower[n] >= 0)
       pa[, 1:(1 + boundaries$lower[n])] <- 1
     pa[, (1 + boundaries$upper[n]):dim2] <- 0
     n <- n - 1
-    p <- outer(D, 0:(rMax - 1), "-") / (N - n)
+    p <- nd / (N - n)
     pa[, -dim2] <- (1 - p) * pa[, -dim2] + p * pa[, -1]
   }
   pa[, 1]
