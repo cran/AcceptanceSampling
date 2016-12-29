@@ -33,7 +33,7 @@ lines(xp@pd, xp@paccept, col="red")
 
 
 ###################################################
-### code chunk number 5: acceptance_sampling_manual.Rnw:694-699
+### code chunk number 5: acceptance_sampling_manual.Rnw:686-691
 ###################################################
 x.mean <- seq(248, 255, 0.05)
 x.pd <- pnorm(250, mean=x.mean, sd=1.5)
@@ -43,26 +43,26 @@ grid(lty="solid")
 
 
 ###################################################
-### code chunk number 6: acceptance_sampling_manual.Rnw:715-717
+### code chunk number 6: acceptance_sampling_manual.Rnw:707-709
 ###################################################
 x <- OC2c(10,3, pd=seq(0,0.1,0.01))
 summary(x, full=TRUE)
 
 
 ###################################################
-### code chunk number 7: acceptance_sampling_manual.Rnw:733-734
+### code chunk number 7: acceptance_sampling_manual.Rnw:725-726
 ###################################################
 assess(OC2c(20,0), PRP=c(0.05, 0.95), CRP=c(0.15, 0.075))
 
 
 ###################################################
-### code chunk number 8: acceptance_sampling_manual.Rnw:749-750
+### code chunk number 8: acceptance_sampling_manual.Rnw:741-742
 ###################################################
 find.plan(PRP=c(0.05, 0.95), CRP=c(0.15, 0.075), type="binom")
 
 
 ###################################################
-### code chunk number 9: acceptance_sampling_manual.Rnw:786-790
+### code chunk number 9: acceptance_sampling_manual.Rnw:778-782
 ###################################################
 x <- OC2c(n=c(8,8), c=c(0,1), r=c(2,2))
 x
@@ -71,7 +71,7 @@ grid(lty="solid")
 
 
 ###################################################
-### code chunk number 10: acceptance_sampling_manual.Rnw:825-831
+### code chunk number 10: acceptance_sampling_manual.Rnw:817-823
 ###################################################
 x.mean <- seq(248, 255, 0.05)
 x.pd <- pnorm(250, mean=x.mean, sd=1.5)
@@ -82,19 +82,19 @@ grid(lty="solid")
 
 
 ###################################################
-### code chunk number 11: acceptance_sampling_manual.Rnw:857-858
+### code chunk number 11: acceptance_sampling_manual.Rnw:849-850
 ###################################################
 find.plan(PRP=c(0.05, 0.95), CRP=c(0.15, 0.075), type="normal", s.type="unknown")
 
 
 ###################################################
-### code chunk number 12: acceptance_sampling_manual.Rnw:866-867
+### code chunk number 12: acceptance_sampling_manual.Rnw:858-859
 ###################################################
 find.plan(PRP=c(0.05, 0.95), CRP=c(0.15, 0.075), type="normal", s.type="known")
 
 
 ###################################################
-### code chunk number 13: acceptance_sampling_manual.Rnw:883-890
+### code chunk number 13: acceptance_sampling_manual.Rnw:875-882
 ###################################################
 xb <- OC2c(n=80,c=7)
 xn1 <- OCvar(n=49, k=1.326538, s.type="unknown")
@@ -103,5 +103,17 @@ plot(xb, type="l", xlim=c(0,0.3))
 grid(lty="solid")
 lines(xn1@pd, xn1@paccept, col="green")
 lines(xn2@pd, xn2@paccept, col="red")
+
+
+###################################################
+### code chunk number 14: acceptance_sampling_manual.Rnw:896-897
+###################################################
+xn1 <- OCvar(n=35, k=1.89, s.type="unknown", pd=seq(0,0.2,by=0.01))
+
+
+###################################################
+### code chunk number 15: acceptance_sampling_manual.Rnw:902-903
+###################################################
+summary(xn1, full=TRUE)
 
 

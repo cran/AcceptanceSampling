@@ -8,6 +8,7 @@
 ##          
 ## Changes:
 ## 21Aug07: * Created
+## 29Dec16: * find.plan: Included check for missing N for hypergeometric
 ## ----------------------------------------------------------------------
 
 setGeneric("assess", function(object, PRP, CRP, print=TRUE)
@@ -79,6 +80,9 @@ find.plan <- function(PRP, CRP,
   type <- match.arg(type)
   s.type <- match.arg(s.type)
 
+  ## Check that N is supplied for hypergeometric distribution
+  if(type=="hypergeom" & missing(N))
+    stop("N must be supplied for the hypergeometric distribution.")
   ## Needs checking that risk points are "valid" - use existing functions
   if (missing(PRP) | missing(CRP))
     stop("Poducer and Consumer Risk Points must be provided.")
@@ -95,74 +99,41 @@ find.plan <- function(PRP, CRP,
   if (type == "binomial") {
     c <- 0
     n <- c+1
-    pa1 <- calc.OCbinomial(n=n,c=c,r=c+1,pd=PRP[1])
-    pa2 <- calc.OCbinomial(n=n,c=c,r=c+1,pd=CRP[1])
-
-    while (pa2 > CRP[2]) {
-      while (pa1 >= PRP[2]) {
-        n <- n+1
-        pa1 <- calc.OCbinomial(n=n,c=c,r=c+1,pd=PRP[1])
-        pa2 <- calc.OCbinomial(n=n,c=c,r=c+1,pd=CRP[1])
-        if(pa2 <= CRP[2])
-          break
-      }
-      if(pa2 <= CRP[2] & pa1 >= PRP[2])
-          break
-      ## No need to reset n - this can stay where it is to speed up
-      ## finding a solution.
-      c <- c+1
-      pa1 <- calc.OCbinomial(n=n,c=c,r=c+1,pd=PRP[1])
-      pa2 <- calc.OCbinomial(n=n,c=c,r=c+1,pd=CRP[1])
+    repeat {
+      if (calc.OCbinomial(n=n,c=c,r=c+1,pd=CRP[1]) > CRP[2])
+        n <- n + 1
+      else if (calc.OCbinomial(n=n,c=c,r=c+1,pd=PRP[1]) < PRP[2])
+        c <- c + 1
+      else
+        break
     }
     return(list(n=n, c=c, r=c+1))
   }
-  ## Attributes Sampling Plan - Binomial distribution
+  ## Attributes Sampling Plan - Hypergeometric distribution
   if (type == "hypergeom") {
     c <- 0
     n <- c+1
-    pa1 <- calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=PRP[1]*N)
-    pa2 <- calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=CRP[1]*N)
-
-    while (pa2 > CRP[2]) {
-      while (pa1 >= PRP[2]) {
-        n <- n+1
-        pa1 <- calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=PRP[1]*N)
-        pa2 <- calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=CRP[1]*N)
-        if(pa2 <= CRP[2])
-          break
-      }
-      if(pa2 <= CRP[2] & pa1 >= PRP[2])
-          break
-      ## No need to reset n - this can stay where it is to speed up
-      ## finding a solution.
-      c <- c+1
-      pa1 <- calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=PRP[1]*N)
-      pa2 <- calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=CRP[1]*N)
+    repeat {
+      if (calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=CRP[1]*N) > CRP[2])
+        n <- n + 1
+      else if (calc.OChypergeom(n=n,c=c,r=c+1,N=N,D=PRP[1]*N) < PRP[2])
+        c <- c + 1
+      else
+        break
     }
     return(list(n=n, c=c, r=c+1))
   }
-  ## Attributes Sampling Plan - Binomial distribution
+  ## Attributes Sampling Plan - Poisson distribution
   if (type == "poisson") {
     c <- 0
     n <- c+1
-    pa1 <- calc.OCpoisson(n=n,c=c,r=c+1,pd=PRP[1])
-    pa2 <- calc.OCpoisson(n=n,c=c,r=c+1,pd=CRP[1])
-
-    while (pa2 > CRP[2]) {
-      while (pa1 >= PRP[2]) {
-        n <- n+1
-        pa1 <- calc.OCpoisson(n=n,c=c,r=c+1,pd=PRP[1])
-        pa2 <- calc.OCpoisson(n=n,c=c,r=c+1,pd=CRP[1])
-        if(pa2 <= CRP[2])
-          break
-      }
-      if(pa2 <= CRP[2] & pa1 >= PRP[2])
-          break
-      ## No need to reset n - this can stay where it is to speed up
-      ## finding a solution.
-      c <- c+1
-      pa1 <- calc.OCpoisson(n=n,c=c,r=c+1,pd=PRP[1])
-      pa2 <- calc.OCpoisson(n=n,c=c,r=c+1,pd=CRP[1])
+    repeat {
+      if (calc.OCpoisson(n=n,c=c,r=c+1,pd=CRP[1]) > CRP[2])
+        n <- n + 1
+      else if (calc.OCpoisson(n=n,c=c,r=c+1,pd=PRP[1]) < PRP[2])
+        c <- c + 1
+      else
+        break
     }
     return(list(n=n, c=c, r=c+1))
   }

@@ -17,7 +17,7 @@
 \description{ The preferred way of creating new objects from the family
   of \code{"OC2c"} classes.}
 
-\usage{OC2c(n,c,r=if (length(c)==1) c+1 else NULL,
+\usage{OC2c(n,c,r=if (length(c)<=2) rep(1+c[length(c)], length(c)) else NULL,
   type=c("binomial","hypergeom", "poisson"), ...) }
 
 \arguments{
@@ -48,7 +48,7 @@
   
   The first and second forms use a default \code{type} of
   "binomial". The first form can calculate \code{r} \emph{only} when
-  \code{n} and \code{c} are of length 1.
+  \code{n} and \code{c} are of length 1 or 2.
 
   The second form provides a the proportion of defectives, \code{pd}, for
   which the OC function should be calculated (default is \code{pd=seq(0,
@@ -60,7 +60,8 @@
   proportion of population defectives, such that \code{pd*N} gives the
   actual number of defectives in the population. If \code{N} or
   \code{pd} are not specified they take defaults of \code{N=100} and
-  \code{pd=seq(0, 1, 0.01)}.
+  \code{pd=seq(0, 1, 0.01)}.  A warning is issued if N and D=N*pd are
+  not integers by checking the value, not the object type.
 }
 
 \value{
