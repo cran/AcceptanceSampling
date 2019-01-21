@@ -27,6 +27,11 @@
 ##            warning if not (for backwards compatibility). Thanks to Thomas
 ##            LaBone and Peter Bloomfield for raising the issue and suggesting
 ##            a solution.
+## 15Jan19: * Change class definitions to avoid errors in latest R development
+##            build. 
+## 21Jan19: * Cleaned up class definitions; changed "representation(...)" to
+##            "slots=c(...)" and included " contains="VIRTUAL" " (for virtual
+##            class.
 ##
 ## Notes:
 ## For implemented package use
@@ -44,7 +49,7 @@
 ## Class definitions
 ## ----------------------------------------------------------------------
 
-setClass("OC2c", representation(n="numeric", ## A vector of sample sizes at each
+setClass("OC2c", slots=c(n="numeric", ## A vector of sample sizes at each
                                 ## stage of sampling
                                 ## NOT CUMULATIVE
                                 c="numeric", ## vector of acceptance numbers for
@@ -56,8 +61,8 @@ setClass("OC2c", representation(n="numeric", ## A vector of sample sizes at each
                                 ## of defectives/defects is >= r
                                 ## CUMULATIVE
                               type="character",
-                              paccept="numeric",
-                              "VIRTUAL"),
+                              paccept="numeric"),
+         contains="VIRTUAL",
          validity=function(object){
            if(any(is.na(object@n)) | any(is.na(object@c)) |
               any(is.na(object@r)))
@@ -93,10 +98,9 @@ setClass("OC2c", representation(n="numeric", ## A vector of sample sizes at each
          })
 
 setClass("OCbinomial",
-         representation("OC2c",
-                        pd="numeric"),
+         slots=c(pd="numeric"),
          contains="OC2c",
-         prototype=list("OC2c", type="binomial", pd=seq(0,1,by=0.01)),
+         prototype=prototype("OC2c", type="binomial", pd=seq(0,1,by=0.01)),
          validity=function(object){
            ## Check that the proportion of defectives make sense
            if (any(is.na(object@pd)))
@@ -106,11 +110,9 @@ setClass("OCbinomial",
          })
 
 setClass("OChypergeom",
-         representation("OC2c",
-                        N="numeric",
-                        pd="numeric"),
+         slots=c(N="numeric", pd="numeric"),
          contains="OC2c",
-         prototype=list("OC2c", type="hypergeom", N=100, pd=(0:100)/100),
+         prototype=prototype("OC2c", type="hypergeom", N=100, pd=(0:100)/100),
          validity=function(object){
            ## Check that the population size of of length 1
            if (length(object@N) > 1)
@@ -131,10 +133,9 @@ setClass("OChypergeom",
          })
 
 setClass("OCpoisson",
-         representation("OC2c",
-                        pd="numeric"),
+         slots=c(pd="numeric"),
          contains="OC2c",
-         prototype=list("OC2c", type="poisson",pd=seq(0,1,0.01)),
+         prototype=prototype("OC2c", type="poisson",pd=seq(0,1,0.01)),
          validity=function(object){
            ## Check that the proportion of defectives make sense
            if (any(is.na(object@pd)))
