@@ -1,8 +1,8 @@
 Package: AcceptanceSampling
 Type: Package
 Title: Creation and Evaluation of Acceptance Sampling Plans
-Version: 1.0-10
-Date: 2023-12-05
+Version: 1.0.11
+Date: 2025-07-23
 Authors@R: c(person("Andreas", "Kiermeier", role = c("aut","cre"),
 	  	email="Andreas.Kiermeier@gmail.com"),
    	    person("Peter", "Bloomfield", role = "ctb",
@@ -17,9 +17,9 @@ LazyLoad: yes
 URL: https://github.com/andreaskiermeier/AcceptanceSampling
 BugReports: https://github.com/andreaskiermeier/AcceptanceSampling/issues
 NeedsCompilation: no
-Packaged: 2023-12-06 04:55:13 UTC; andre
+Packaged: 2025-07-23 05:22:05 UTC; Andreas
 Author: Andreas Kiermeier [aut, cre],
   Peter Bloomfield [ctb]
 Maintainer: Andreas Kiermeier <Andreas.Kiermeier@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-12-06 05:50:05 UTC
+Date/Publication: 2025-07-23 05:50:02 UTC
